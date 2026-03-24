@@ -4,7 +4,7 @@ load_dotenv()
 import os
 import json
 from flask import Flask, request, jsonify
-from services.deconstructor import desconstruir_peticao
+from src.services.deconstructor import desconstruir_peticao
 import logging
 
 app = Flask(__name__)
