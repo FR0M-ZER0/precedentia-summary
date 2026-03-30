@@ -2,7 +2,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 from src.app import app
-from src.services.deconstructor import desconstruir_peticao
+from src.services.deconstructor import deconstruct_petition
 
 
 # ── Fixture do cliente Flask ──────────────────────────────────────────────────
@@ -73,13 +73,13 @@ class TestRota:
         assert "error" in data
 
 
-# ── Testes do serviço (desconstruir_peticao) ─────────────────────────────────
+# ── Testes do serviço (deconstruct_petition) ─────────────────────────────────
 
 class TestServico:
     @patch("src.services.deconstructor.ollama.chat")
     def test_retorno_json_limpo(self, mock_chat):
         mock_chat.return_value = make_ollama_stream(json.dumps(PETICAO_FAKE_JSON))
-        result = desconstruir_peticao("Petição qualquer")
+        result = deconstruct_petition("Petição qualquer")
         assert isinstance(result, dict)
         assert "pedidos" in result
         assert isinstance(result["pedidos"], list)
@@ -87,7 +87,7 @@ class TestServico:
     @patch("src.services.deconstructor.ollama.chat")
     def test_campos_obrigatorios_presentes(self, mock_chat):
         mock_chat.return_value = make_ollama_stream(json.dumps(PETICAO_FAKE_JSON))
-        result = desconstruir_peticao("Petição qualquer")
+        result = deconstruct_petition("Petição qualquer")
         for campo in ["tipo", "tribunal", "partes", "fatos", "fundamentos_juridicos", "pedidos"]:
             assert campo in result, f"Campo '{campo}' ausente no retorno"
 
@@ -96,7 +96,7 @@ class TestServico:
         """Modelo retornou com ```json ... ``` — deve ser limpo."""
         wrapped = f"```json\n{json.dumps(PETICAO_FAKE_JSON)}\n```"
         mock_chat.return_value = make_ollama_stream(wrapped)
-        result = desconstruir_peticao("Petição qualquer")
+        result = deconstruct_petition("Petição qualquer")
         assert result["tipo"] == "Ação de Cobrança"
 
     @patch("src.services.deconstructor.ollama.chat")
@@ -104,7 +104,7 @@ class TestServico:
         """Modelo retornou com bloco <think>...</think> — deve ser ignorado."""
         with_think = f"<think>raciocínio interno</think>\n{json.dumps(PETICAO_FAKE_JSON)}"
         mock_chat.return_value = make_ollama_stream(with_think)
-        result = desconstruir_peticao("Petição qualquer")
+        result = deconstruct_petition("Petição qualquer")
         assert result["tipo"] == "Ação de Cobrança"
 
     @patch("src.services.deconstructor.ollama.chat")
@@ -112,21 +112,21 @@ class TestServico:
         """Se o modelo retornar lixo, deve explodir com JSONDecodeError."""
         mock_chat.return_value = make_ollama_stream("isso não é json")
         with pytest.raises(json.JSONDecodeError):
-            desconstruir_peticao("Petição qualquer")
+            deconstruct_petition("Petição qualquer")
 
     @patch("src.services.deconstructor.ollama.chat")
     def test_campos_nulos_aceitos(self, mock_chat):
         """Campos opcionais como valor_causa e data_ajuizamento podem ser null."""
         parcial = {**PETICAO_FAKE_JSON, "valor_causa": None, "data_ajuizamento": None}
         mock_chat.return_value = make_ollama_stream(json.dumps(parcial))
-        result = desconstruir_peticao("Petição qualquer")
+        result = deconstruct_petition("Petição qualquer")
         assert result["valor_causa"] is None
         assert result["data_ajuizamento"] is None
 
     @patch("src.services.deconstructor.ollama.chat")
     def test_fatos_e_pedidos_sao_listas(self, mock_chat):
         mock_chat.return_value = make_ollama_stream(json.dumps(PETICAO_FAKE_JSON))
-        result = desconstruir_peticao("Petição qualquer")
+        result = deconstruct_petition("Petição qualquer")
         assert isinstance(result["fatos"], list)
         assert isinstance(result["pedidos"], list)
         assert isinstance(result["fundamentos_juridicos"], list)

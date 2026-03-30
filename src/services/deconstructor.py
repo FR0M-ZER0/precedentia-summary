@@ -5,7 +5,7 @@ import ollama
 MODEL = os.getenv("OLLAMA_MODEL")
 TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0))
 
-def desconstruir_peticao(texto_peticao: str) -> dict:
+def deconstruct_petition(texto_peticao: str) -> dict:
     prompt = f"""Você é um especialista em direito brasileiro. Analise a petição inicial abaixo e extraia as informações em formato JSON.
 Retorne APENAS o JSON, sem explicações, sem markdown, sem blocos de código.
 O JSON deve seguir exatamente esta estrutura:
