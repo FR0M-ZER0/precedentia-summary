@@ -3,11 +3,26 @@ load_dotenv()
 
 import os
 import json
-from flask import Flask, request, jsonify
-from src.services.deconstructor import desconstruir_peticao
 import logging
+from flask import Flask, request, jsonify
+from apscheduler.schedulers.background import BackgroundScheduler
+
+from src.services.deconstructor import deconstruct_petition
+from src.services.summarizer import run_summarizer
 
 app = Flask(__name__)
+logging.basicConfig(level=logging.INFO)
+
+SUMMARIZER_INTERVAL_MINUTES = int(os.getenv("SUMMARIZER_INTERVAL_MINUTES", 5))
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(
+    run_summarizer,
+    "interval",
+    minutes=SUMMARIZER_INTERVAL_MINUTES,
+)
+scheduler.start()
+
 
 @app.route("/api/deconstruct", methods=["POST"])
 def extrair():
@@ -22,7 +37,7 @@ def extrair():
         return jsonify({"error": "O campo 'peticao' não pode estar vazio."}), 400
 
     try:
-        resultado = desconstruir_peticao(texto)
+        resultado = deconstruct_petition(texto)
         return jsonify(resultado), 200
     except json.JSONDecodeError as e:
         return jsonify({"error": "O modelo não retornou um JSON válido.", "detail": str(e)}), 502
