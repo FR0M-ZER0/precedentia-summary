@@ -91,11 +91,6 @@ docker exec -it precedentia-ollama ollama pull qwen3:8b
 python -m src.app
 ```
 
-> **Atenção:** Não execute com `FLASK_DEBUG=true` em produção. Em desenvolvimento, se precisar do modo debug, desative o reloader para evitar que o job de sumarização seja iniciado em duplicidade:
-> ```python
-> app.run(debug=True, use_reloader=False)
-> ```
-
 ## 🧪 Rodando os testes
 
 Para executar toda a suite de testes:
