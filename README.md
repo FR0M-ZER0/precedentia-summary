@@ -1,4 +1,4 @@
-# PrecedentIA - LLM API
+# PrecedentIA - Summary
 
 Serviço do sistema **PrecedentIA**, desenvolvido em Python, responsável por dois papéis centrais na plataforma: a **desconstrução de petições iniciais** em estruturas jurídicas padronizadas, e a **sumarização automática de precedentes** armazenados no banco vetorial.
 
@@ -90,11 +90,6 @@ docker exec -it precedentia-ollama ollama pull qwen3:8b
 ```bash
 python -m src.app
 ```
-
-> **Atenção:** Não execute com `FLASK_DEBUG=true` em produção. Em desenvolvimento, se precisar do modo debug, desative o reloader para evitar que o job de sumarização seja iniciado em duplicidade:
-> ```python
-> app.run(debug=True, use_reloader=False)
-> ```
 
 ## 🧪 Rodando os testes
 
