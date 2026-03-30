@@ -1,4 +1,4 @@
-# PrecedentIA - LLM API
+# PrecedentIA - Summary
 
 Serviço do sistema **PrecedentIA**, desenvolvido em Python, responsável por dois papéis centrais na plataforma: a **desconstrução de petições iniciais** em estruturas jurídicas padronizadas, e a **sumarização automática de precedentes** armazenados no banco vetorial.
 
