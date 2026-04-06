@@ -31,7 +31,7 @@ pydantic_core==2.41.5
 Pygments==2.19.2
 pytest==9.0.2
 python-dotenv==1.2.2
-pywin32==311
+pywin32==311; platform_system == "Windows"
 qdrant-client==1.17.1
 tomli==2.4.0
 typing-inspection==0.4.2

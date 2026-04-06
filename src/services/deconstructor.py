@@ -5,24 +5,57 @@ import ollama
 MODEL = os.getenv("OLLAMA_MODEL")
 TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", 0))
 
+EXAMPLE = """Você é um extrator de informações jurídicas. 
+Sua única função é retornar um JSON com exatamente estas chaves: tipo, tribunal, fatos, pedidos.
+Nunca invente outras chaves. Nunca adicione campos extras.
+Retorne SOMENTE o JSON puro, sem markdown, sem explicações.
+
+EXEMPLO:
+Petição: "...ação de alimentos... requer o pagamento de R$ 2.000,00 mensais... fatos: réu abandonou lar... endereçada ao Supremo Tribunal Federal"
+Saída:
+{
+  "tipo": "Ação de Alimentos",
+  "tribunal": STF,
+  "fatos": "Réu abandonou o lar familiar...",
+  "pedidos": [{"descricao": "Pagamento de alimentos mensais", "valor": 2000}]
+}
+
+Coloque todos os fatos em uma única frase, sem omitir, resumir ou inventar nada.
+"""
+
+SCHEMA = """Retorne APENAS este JSON, sem nenhum campo adicional:
+{
+  "tipo": "string — tipo da ação judicial",
+  "tribunal": "string — apenas o acrônimo (ex: STJ, TJSP) ou null se não mencionado",
+  "fatos": ["string - todos os fatos em forma de texto corrido"],
+  "pedidos": ["string"]
+}"""
+
+VALID_KEYS = {"tipo", "tribunal", "fatos", "pedidos"}
+
+
+def _parse_response(raw: str) -> dict:
+    raw = raw.strip()
+
+    if "</think>" in raw:
+        raw = raw.split("</think>", 1)[-1].strip()
+
+    if raw.startswith("```"):
+        raw = raw.split("```", 2)[1]
+        if raw.startswith("json"):
+            raw = raw[4:]
+        raw = raw.strip()
+
+    data = json.loads(raw)
+
+    return {k: v for k, v in data.items() if k in VALID_KEYS}
+
+
 def deconstruct_petition(texto_peticao: str) -> dict:
-    prompt = f"""Você é um especialista em direito brasileiro. Analise a petição inicial abaixo e extraia as informações em formato JSON.
-Retorne APENAS o JSON, sem explicações, sem markdown, sem blocos de código.
-O JSON deve seguir exatamente esta estrutura:
-{{
-  "tipo": "string",
-  "tribunal": {{ "nome": "string", "comarca": "string", "uf": "string" }},
-  "partes": {{
-    "autor": {{ "nome": "string", "cpf_cnpj": "string ou null" }},
-    "reu":   {{ "nome": "string", "cpf_cnpj": "string ou null" }}
-  }},
-  "fatos": ["string"],
-  "fundamentos_juridicos": ["string"],
-  "pedidos": [{{ "descricao": "string", "valor": "number ou null" }}],
-  "valor_causa": "number ou null",
-  "data_ajuizamento": "string ou null — formato YYYY-MM-DD"
-}}
-Se alguma informação não estiver presente, use null para campos simples ou [] para listas.
+    prompt = f"""{EXAMPLE}
+
+{SCHEMA}
+
 PETIÇÃO INICIAL:
 {texto_peticao}"""
 
@@ -37,16 +70,4 @@ PETIÇÃO INICIAL:
     for chunk in stream:
         full_response += chunk["message"]["content"]
 
-    # Strip <think>...</think> block if present (reasoning models)
-    raw = full_response.strip()
-    if "</think>" in raw:
-        raw = raw.split("</think>", 1)[-1].strip()
-
-    # Strip markdown code fences if present
-    if raw.startswith("```"):
-        raw = raw.split("```", 2)[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-        raw = raw.strip()
-
-    return json.loads(raw)
+    return _parse_response(full_response)

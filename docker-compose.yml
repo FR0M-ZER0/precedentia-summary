@@ -1,14 +1,14 @@
 services:
   # Banco de dados vetorial
-  qdrant:
-    image: qdrant/qdrant:latest
-    container_name: precedentia-qdrant
-    ports:
-      - "6333:6333"
-      - "6334:6334"
-    volumes:
-      - qdrant_data:/qdrant/storage
-    restart: unless-stopped
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   container_name: precedentia-qdrant
+  #   ports:
+  #     - "6333:6333"
+  #     - "6334:6334"
+  #   volumes:
+  #     - qdrant_data:/qdrant/storage
+  #   restart: unless-stopped
 
   # Motor de LLM
   ollama:
@@ -19,8 +19,15 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     # Se o usuário tiver NVIDIA, ele pode adicionar o bloco de deploy aqui
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     restart: unless-stopped
 
 volumes:
-  qdrant_data:
+  # qdrant_data:
   ollama_data:
