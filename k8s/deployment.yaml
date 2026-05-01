@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: precedentia-summary
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: summary
+  template:
+    metadata:
+      labels:
+        app: summary
+    spec:
+      containers:
+      - name: summary
+        image: gabguimaraes/precedentia-summary:latest
+        ports:
+        - containerPort: 5002
+        resources:
+          limits:
+            memory: "4Gi"
