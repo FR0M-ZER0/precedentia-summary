@@ -1,20 +1,16 @@
 name: CD Pipeline
-
 on:
   push:
-    branches:
-      - hml
+    branches: [ "main", "dev", "hml" ]
 
 jobs:
-  build-and-update-manifest:
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
-      - name: Set Image Tag
-        run: echo "SHA_TAG=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+        with:
+          token: ${{ secrets.PAT_TOKEN }}
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -22,20 +18,23 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Build and Push
         run: |
-          IMAGE_NAME="gabguimaraes/precedentia-summary"
-          docker build -t $IMAGE_NAME:$SHA_TAG .
-          docker push $IMAGE_NAME:$SHA_TAG
+          IMAGE_TAG=$(git rev-parse --short HEAD)
+          FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:$IMAGE_TAG"
+          
+          docker build -t $FULL_IMAGE .
+          docker push $FULL_IMAGE
 
-      - name: Update ArgoCD Manifests
+      - name: Update K8s Manifest
         run: |
-          git clone https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/FR0M-ZER0/PrecedentIA.git
-          cd PrecedentIA
-          IMAGE_NAME="gabguimaraes/precedentia-summary"
-          sed -i "s|image: $IMAGE_NAME:.*|image: $IMAGE_NAME:$SHA_TAG|g" precedentia-summary/k8s/deployment.yaml
+          IMAGE_TAG=$(git rev-parse --short HEAD)
+          FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:$IMAGE_TAG"
+
+          sed -i "s|image: .*gabguimaraes.*|image: $FULL_IMAGE|g" k8s/deployment.yaml
+
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git add precedentia-summary/k8s/deployment.yaml
-          git commit -m "CD: Update precedentia-summary image tag to $SHA_TAG"
+          git add k8s/deployment.yaml
+          git commit -m "CD: Update Summary image tag to $IMAGE_TAG [skip ci]"
           git push
