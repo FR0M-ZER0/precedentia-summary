@@ -24,6 +24,6 @@ WORKDIR /app/src
 EXPOSE 5000
 
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/src
 
 CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:5000"]
