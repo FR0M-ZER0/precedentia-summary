@@ -42,7 +42,7 @@ jobs:
       - name: Update K8s Manifest
         run: |
           # Usamos o GITHUB_SHA completo para bater com a tag do Docker Hub
-          FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:${{ github.sha }}"
+          FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:latest"
           
           sed -i "s|image: .*gabguimaraes/precedentia-summary.*|image: $FULL_IMAGE|g" k8s/deployment.yaml
 
