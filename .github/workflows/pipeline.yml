@@ -41,14 +41,16 @@ jobs:
 
       - name: Update K8s Manifest
         run: |
-          FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:${{ steps.vars.outputs.sha_short }}"
+          # Usamos o GITHUB_SHA completo para bater com a tag do Docker Hub
+          FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:${{ github.sha }}"
+          
           sed -i "s|image: .*gabguimaraes/precedentia-summary.*|image: $FULL_IMAGE|g" k8s/deployment.yaml
 
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
           
           git add k8s/deployment.yaml
-          git commit -m "GitOps: Update Summary to ${{ steps.vars.outputs.sha_short }} [skip ci]" || echo "Sem mudanças"
+          git commit -m "GitOps: Update Summary to ${{ github.sha }} [skip ci]" || echo "Sem mudanças"
           
           git pull origin ${{ github.ref_name }} --rebase
           git push origin ${{ github.ref_name }}
