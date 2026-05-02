@@ -15,7 +15,7 @@ spec:
       containers:
       - name: summary
 
-        image: docker.io/gabguimaraes/precedentia-summary:84d6e48
+        image: docker.io/gabguimaraes/precedentia-summary:f988af8
 
         ports:
         - containerPort: 5002
