@@ -14,11 +14,22 @@ spec:
     spec:
       containers:
       - name: summary
-
         image: docker.io/gabguimaraes/precedentia-summary:latest
-
         ports:
         - containerPort: 5002
+        env:
+        - name: QDRANT_HOST
+          value: "qdrant-db"
+        - name: QDRANT_PORT
+          value: "6333"
+        - name: REDIS_HOST
+          value: "redis-db-master"
+        - name: REDIS_PORT
+          value: "6379"
+        - name: OLLAMA_HOST
+          value: "ollama-service"
+        - name: OLLAMA_PORT
+          value: "11434"
         resources:
           requests:
             memory: "1Gi"
@@ -26,4 +37,3 @@ spec:
           limits:
             memory: "4Gi"
             cpu: "2000m"
-
