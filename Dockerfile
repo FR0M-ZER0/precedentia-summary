@@ -1,10 +1,8 @@
 FROM public.ecr.aws/docker/library/python:3.12-slim
 
 ARG TARGETPLATFORM
-
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-
 
 WORKDIR /app
 
@@ -20,10 +18,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 
-WORKDIR /app
+WORKDIR /app/src
 
 EXPOSE 5000
 
-ENV PYTHONPATH=/app:/app/src
+ENV PYTHONPATH=/app
 
-CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "src.main:app", "--bind", "0.0.0.0:5000"]
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "main:app", "--bind", "0.0.0.0:5000"]
