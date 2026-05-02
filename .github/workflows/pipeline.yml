@@ -42,12 +42,13 @@ jobs:
       - name: Update K8s Manifest
         run: |
           FULL_IMAGE="docker.io/gabguimaraes/precedentia-summary:${{ steps.vars.outputs.sha_short }}"
-          
           sed -i "s|image: .*gabguimaraes/precedentia-summary.*|image: $FULL_IMAGE|g" k8s/deployment.yaml
 
           git config user.name "GitHub Actions Bot"
           git config user.email "actions@github.com"
-          git pull origin ${{ github.ref_name }} --rebase
+          
           git add k8s/deployment.yaml
-          git commit -m "GitOps: Update Summary to ${{ steps.vars.outputs.sha_short }} [skip ci]"
-          git push
+          git commit -m "GitOps: Update Summary to ${{ steps.vars.outputs.sha_short }} [skip ci]" || echo "Sem mudanças"
+          
+          git pull origin ${{ github.ref_name }} --rebase
+          git push origin ${{ github.ref_name }}
