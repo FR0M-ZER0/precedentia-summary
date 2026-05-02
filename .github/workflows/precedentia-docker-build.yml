@@ -31,5 +31,5 @@ jobs:
           push: true
           platforms: linux/arm64
           tags: |
-            gabguimaraes/precedentia-api:latest
-            gabguimaraes/precedentia-api:${{ github.sha }}
+            gabguimaraes/precedentia-summary:latest
+            gabguimaraes/precedentia-summary:${{ github.sha }}
