@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from src.services.deconstructor import deconstruct_petition
 from src.services.summarizer import run_summarizer
+from src.services.analyzer import analyze_precedent_applicability
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -43,6 +44,35 @@ def extrair():
         return jsonify({"error": "O modelo não retornou um JSON válido.", "detail": str(e)}), 502
     except Exception as e:
         return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+
+
+@app.route("/api/analyze-precedent", methods=["POST"])
+def analyze_precedent():
+    app.logger.info("Precedent analysis request received")
+    body = request.get_json(silent=True)
+
+    if not body:
+        return jsonify({"error": "Request body is required."}), 400
+
+    missing = [field for field in ("peticao", "precedente") if field not in body]
+    if missing:
+        return jsonify({"error": f"Missing required fields: {', '.join(missing)}."}), 400
+
+    petition_text = body["peticao"].strip()
+    precedent_text = body["precedente"].strip()
+
+    if not petition_text:
+        return jsonify({"error": "Field 'peticao' must not be empty."}), 400
+    if not precedent_text:
+        return jsonify({"error": "Field 'precedente' must not be empty."}), 400
+
+    try:
+        result = analyze_precedent_applicability(petition_text, precedent_text)
+        return jsonify(result), 200
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "Model did not return valid JSON.", "detail": str(e)}), 502
+    except Exception as e:
+        return jsonify({"error": "Internal server error.", "detail": str(e)}), 500
 
 
 if __name__ == "__main__":
