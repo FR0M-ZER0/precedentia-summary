@@ -18,4 +18,5 @@ COPY . .
 
 EXPOSE 5000
 
+ENV PYTHONPATH=/app
 CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "src.main:app", "--bind", "0.0.0.0:5000"]
