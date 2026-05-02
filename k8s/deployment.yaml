@@ -14,9 +14,13 @@ spec:
     spec:
       containers:
       - name: summary
-        image: gabguimaraes/precedentia-summary:latest
+        image: docker.io/gabguimaraes/precedentia-summary:latest
         ports:
         - containerPort: 5002
         resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
           limits:
             memory: "4Gi"
+            cpu: "2000m"
