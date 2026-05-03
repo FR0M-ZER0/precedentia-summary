@@ -9,6 +9,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 from src.services.deconstructor import deconstruct_petition
 from src.services.summarizer import run_summarizer
+from src.services.precedent_analyzer import analyze_precedent
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -41,6 +42,29 @@ def extrair():
         return jsonify(resultado), 200
     except json.JSONDecodeError as e:
         return jsonify({"error": "O modelo não retornou um JSON válido.", "detail": str(e)}), 502
+    except Exception as e:
+        return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+
+
+@app.route("/api/analyze-precedent", methods=["POST"])
+def analisar_precedente():
+    app.logger.info("Request received")
+    body = request.get_json(silent=True)
+ 
+    if not body:
+        return jsonify({"error": "Corpo da requisição inválido."}), 400
+ 
+    precedente = (body.get("precedente") or "").strip()
+    peticao = (body.get("peticao") or "").strip()
+ 
+    if not precedente:
+        return jsonify({"error": "Campo 'precedente' é obrigatório."}), 400
+    if not peticao:
+        return jsonify({"error": "Campo 'peticao' é obrigatório."}), 400
+ 
+    try:
+        analise = analyze_precedent(precedente, peticao)
+        return jsonify({"analise": analise}), 200
     except Exception as e:
         return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
 
