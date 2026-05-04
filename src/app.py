@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from src.services.deconstructor import deconstruct_petition
 from src.services.summarizer import run_summarizer
 from src.services.precedent_analyzer import analyze_precedent
+from src.services.applicability_checker import check_applicability
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -65,6 +66,32 @@ def analisar_precedente():
     try:
         analise = analyze_precedent(precedente, peticao)
         return jsonify({"analise": analise}), 200
+    except Exception as e:
+        return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+    
+
+@app.route("/api/check-applicability", methods=["POST"])
+def verificar_aplicabilidade():
+    app.logger.info("Request received")
+    body = request.get_json(silent=True)
+
+    if not body:
+        return jsonify({"error": "Corpo da requisição inválido."}), 400
+
+    facts = (body.get("facts") or "").strip()
+    petition_type = (body.get("petition_type") or "").strip()
+    precedents = body.get("precedents", [])
+
+    if not facts:
+        return jsonify({"error": "Campo 'facts' é obrigatório."}), 400
+    if not precedents:
+        return jsonify({"error": "Campo 'precedents' é obrigatório."}), 400
+
+    try:
+        resultado = check_applicability(facts, petition_type, precedents)
+        return jsonify({"precedents": resultado}), 200
+    except json.JSONDecodeError as e:
+        return jsonify({"error": "O modelo não retornou um JSON válido.", "detail": str(e)}), 502
     except Exception as e:
         return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
 
