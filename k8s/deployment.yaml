@@ -15,10 +15,13 @@ spec:
       containers:
       - name: summary
 
-        image: docker.io/gabguimaraes/precedentia-summary:529fd27
+        image: docker.io/gabguimaraes/precedentia-summary:49cb3f6
 
         ports:
         - containerPort: 5002
+        env:
+          - name: EMBEDDING_URL
+            value: "http://embedding-service:5001"
         resources:
           requests:
             memory: "1Gi"
