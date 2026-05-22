@@ -11,6 +11,7 @@ from src.services.deconstructor import deconstruct_petition
 from src.services.summarizer import run_summarizer
 from src.services.precedent_analyzer import analyze_precedent
 from src.services.applicability_checker import check_applicability
+from src.services.petition_generator import generate_petition, edit_petition
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -95,6 +96,86 @@ def verificar_aplicabilidade():
     except Exception as e:
         return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
 
+@app.route("/api/petition/generate", methods=["POST"])
+def gerar_peticao():
+    app.logger.info("Request received – generate petition")
+    body = request.get_json(silent=True)
+ 
+    if not body:
+        return jsonify({"error": "Corpo da requisição inválido."}), 400
+ 
+    # ── Campos obrigatórios ──────────────────────────────────────────────────
+    required = [
+        "author_description",
+        "defendant_description",
+        "action_type",
+        "tribunal",
+        "facts_summary",
+        "cause_value",
+    ]
+    missing = [f for f in required if not (body.get(f) or "").strip()]
+    if missing:
+        return jsonify({"error": f"Campos obrigatórios ausentes: {', '.join(missing)}"}), 400
+ 
+    # ── Campos opcionais com defaults seguros ────────────────────────────────
+    files: list[str] = body.get("files", [])          # lista de textos já extraídos
+    requests_list: list[str] = body.get("requests", [])
+    precedents: list[dict] = body.get("precedents", [])  # [{name, question, description}]
+    urgent_injunction: bool = bool(body.get("urgent_injunction", False))
+    free_justice: bool = bool(body.get("free_justice", False))
+ 
+    # ── Validações de tipo ────────────────────────────────────────────────────
+    if not isinstance(files, list):
+        return jsonify({"error": "O campo 'files' deve ser uma lista de strings."}), 400
+    if not isinstance(requests_list, list):
+        return jsonify({"error": "O campo 'requests' deve ser uma lista de strings."}), 400
+    if not isinstance(precedents, list):
+        return jsonify({"error": "O campo 'precedents' deve ser uma lista de objetos."}), 400
+ 
+    try:
+        petition_text = generate_petition(
+            author_description=body["author_description"].strip(),
+            defendant_description=body["defendant_description"].strip(),
+            action_type=body["action_type"].strip(),
+            tribunal=body["tribunal"].strip(),
+            facts_summary=body["facts_summary"].strip(),
+            files=files,
+            requests=requests_list,
+            cause_value=body["cause_value"].strip(),
+            urgent_injunction=urgent_injunction,
+            free_justice=free_justice,
+            precedents=precedents,
+        )
+        return jsonify({"content": petition_text}), 200
+ 
+    except Exception as e:
+        app.logger.error(f"Erro ao gerar petição: {e}")
+        return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+ 
+ 
+@app.route("/api/petition/edit", methods=["POST"])
+def editar_peticao():
+    app.logger.info("Request received – edit petition")
+    body = request.get_json(silent=True)
+ 
+    if not body:
+        return jsonify({"error": "Corpo da requisição inválido."}), 400
+ 
+    content = (body.get("content") or "").strip()
+    change = (body.get("change") or "").strip()
+ 
+    if not content:
+        return jsonify({"error": "Campo 'content' é obrigatório."}), 400
+    if not change:
+        return jsonify({"error": "Campo 'change' é obrigatório."}), 400
+ 
+    try:
+        edited = edit_petition(content=content, change=change)
+        return jsonify({"content": edited}), 200
+ 
+    except Exception as e:
+        app.logger.error(f"Erro ao editar petição: {e}")
+        return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))
