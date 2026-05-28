@@ -82,7 +82,7 @@ TEMPERATURE = float(os.getenv("OPENAI_TEMPERATURE", 0))
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-EXAMPLE = """Você é um extrator de informações jurídicas. 
+EXAMPLE = """Você é um extrator de informações jurídicas.
 Sua única função é retornar um JSON com exatamente estas chaves: tipo, tribunal, fatos, pedidos.
 Nunca invente outras chaves. Nunca adicione campos extras.
 Retorne SOMENTE o JSON puro, sem markdown, sem explicações.
@@ -94,7 +94,7 @@ Saída:
   "tipo": "Ação de Alimentos",
   "tribunal": "STF",
   "fatos": "Réu abandonou o lar familiar...",
-  "pedidos": [{"descricao": "Pagamento de alimentos mensais", "valor": 2000}]
+  "pedidos": ["Pagamento de alimentos mensais no valor de R$ 2.000,00", "Outro pedido se houver..."]
 }
 
 Coloque todos os fatos em uma única frase, sem omitir, resumir ou inventar nada.
@@ -104,7 +104,7 @@ SCHEMA = """Retorne APENAS este JSON, sem nenhum campo adicional:
 {
   "tipo": "string — tipo da ação judicial",
   "tribunal": "string — apenas o acrônimo (ex: STJ, TJSP) ou null se não mencionado",
-  "fatos": ["string - todos os fatos em forma de texto corrido"],
+  "fatos": "string — todos os fatos em texto corrido",
   "pedidos": ["string"]
 }"""
 
