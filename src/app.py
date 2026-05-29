@@ -12,6 +12,8 @@ from src.services.summarizer import run_summarizer
 from src.services.precedent_analyzer import analyze_precedent
 from src.services.applicability_checker import check_applicability
 from src.services.petition_generator import generate_petition, edit_petition
+from src.services.deconstructor_sentence import deconstruct_petition_from_lawsuit
+
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -176,6 +178,49 @@ def editar_peticao():
     except Exception as e:
         app.logger.error(f"Erro ao editar petição: {e}")
         return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+
+
+@app.route("/api/deconstruct-lawsuit", methods=["POST"])
+def extrair_processo():
+    app.logger.info("Request received – lawsuit deconstruction")
+
+    body = request.get_json(silent=True)
+
+    if not body or "peticao" not in body:
+        return jsonify({"error": "Campo 'peticao' é obrigatório."}), 400
+
+    texto = body["peticao"].strip()
+
+    if not texto:
+        return jsonify({"error": "O campo 'peticao' não pode estar vazio."}), 400
+
+    try:
+        resultado = deconstruct_petition_from_lawsuit(texto)
+
+        return jsonify({
+            "tipo": resultado.get("tipo"),
+            "tribunal": resultado.get("tribunal"),
+            "autor": resultado.get("autor"),
+            "reu": resultado.get("reu"),
+            "fatos": resultado.get("fatos"),
+            "pedidos": resultado.get("pedidos", []),
+            "contestacao": resultado.get("contestacao"),
+        }), 200
+
+    except json.JSONDecodeError as e:
+        return jsonify({
+            "error": "O modelo não retornou um JSON válido.",
+            "detail": str(e)
+        }), 502
+
+    except Exception as e:
+        app.logger.error(f"Erro ao desconstruir petição: {e}")
+
+        return jsonify({
+            "error": "Erro interno.",
+            "detail": str(e)
+        }), 500
+
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))
