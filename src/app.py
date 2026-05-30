@@ -12,6 +12,9 @@ from src.services.summarizer import run_summarizer
 from src.services.precedent_analyzer import analyze_precedent
 from src.services.applicability_checker import check_applicability
 from src.services.petition_generator import generate_petition, edit_petition
+from src.services.deconstructor_sentence import deconstruct_petition_from_lawsuit
+from src.services.sentence_generator import generate_sentence, edit_sentence
+
 
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -176,6 +179,113 @@ def editar_peticao():
     except Exception as e:
         app.logger.error(f"Erro ao editar petição: {e}")
         return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+
+
+@app.route("/api/deconstruct-lawsuit", methods=["POST"])
+def extrair_processo():
+    app.logger.info("Request received – lawsuit deconstruction")
+
+    body = request.get_json(silent=True)
+
+    if not body or "peticao" not in body:
+        return jsonify({"error": "Campo 'peticao' é obrigatório."}), 400
+
+    texto = body["peticao"].strip()
+
+    if not texto:
+        return jsonify({"error": "O campo 'peticao' não pode estar vazio."}), 400
+
+    try:
+        resultado = deconstruct_petition_from_lawsuit(texto)
+
+        return jsonify({
+            "tipo": resultado.get("tipo"),
+            "tribunal": resultado.get("tribunal"),
+            "autor": resultado.get("autor"),
+            "reu": resultado.get("reu"),
+            "fatos": resultado.get("fatos"),
+            "pedidos": resultado.get("pedidos", []),
+            "contestacao": resultado.get("contestacao"),
+        }), 200
+
+    except json.JSONDecodeError as e:
+        return jsonify({
+            "error": "O modelo não retornou um JSON válido.",
+            "detail": str(e)
+        }), 502
+
+    except Exception as e:
+        app.logger.error(f"Erro ao desconstruir petição: {e}")
+
+        return jsonify({
+            "error": "Erro interno.",
+            "detail": str(e)
+        }), 500
+
+@app.route("/api/sentence/generate", methods=["POST"])
+def gerar_sentenca():
+    app.logger.info("Request received – generate sentence")
+    body = request.get_json(silent=True)
+
+    if not body:
+        return jsonify({"error": "Corpo da requisição inválido."}), 400
+
+    required = ["author", "defendant", "action_type", "tribunal", "facts_summary"]
+    missing = [f for f in required if not (body.get(f) or "").strip()]
+    if missing:
+        return jsonify({"error": f"Campos obrigatórios ausentes: {', '.join(missing)}"}), 400
+
+    requests_list: list[str] = body.get("requests", [])
+    precedents: list[dict] = body.get("precedents", [])
+    contestacao: str | None = (body.get("contestacao") or "").strip() or None
+
+    if not isinstance(requests_list, list):
+        return jsonify({"error": "O campo 'requests' deve ser uma lista de strings."}), 400
+    if not isinstance(precedents, list):
+        return jsonify({"error": "O campo 'precedents' deve ser uma lista de objetos."}), 400
+
+    try:
+        sentence_text = generate_sentence(
+            author=body["author"].strip(),
+            defendant=body["defendant"].strip(),
+            action_type=body["action_type"].strip(),
+            tribunal=body["tribunal"].strip(),
+            facts_summary=body["facts_summary"].strip(),
+            requests=requests_list,
+            precedents=precedents,
+            contestacao=contestacao,
+        )
+        return jsonify({"content": sentence_text}), 200
+
+    except Exception as e:
+        app.logger.error(f"Erro ao gerar sentença: {e}")
+        return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+
+
+@app.route("/api/sentence/edit", methods=["POST"])
+def editar_sentenca():
+    app.logger.info("Request received – edit sentence")
+    body = request.get_json(silent=True)
+
+    if not body:
+        return jsonify({"error": "Corpo da requisição inválido."}), 400
+
+    content = (body.get("content") or "").strip()
+    change = (body.get("change") or "").strip()
+
+    if not content:
+        return jsonify({"error": "Campo 'content' é obrigatório."}), 400
+    if not change:
+        return jsonify({"error": "Campo 'change' é obrigatório."}), 400
+
+    try:
+        edited = edit_sentence(content=content, change=change)
+        return jsonify({"content": edited}), 200
+
+    except Exception as e:
+        app.logger.error(f"Erro ao editar sentença: {e}")
+        return jsonify({"error": "Erro interno.", "detail": str(e)}), 500
+
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))
