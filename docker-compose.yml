@@ -19,13 +19,6 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     # Se o usuário tiver NVIDIA, ele pode adicionar o bloco de deploy aqui
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
     restart: unless-stopped
 
 volumes:

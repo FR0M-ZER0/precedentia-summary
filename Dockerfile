@@ -1,24 +1,22 @@
+FROM public.ecr.aws/docker/library/python:3.12-slim
 
-FROM python:3.12-slim
-
-
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
+ARG TARGETPLATFORM
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
-
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-
 COPY . .
 
+ENV PYTHONPATH=".:/app"
+
 EXPOSE 5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
+
+CMD ["gunicorn", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--chdir", "/app/src", "app:app", "--bind", "0.0.0.0:5000"]
